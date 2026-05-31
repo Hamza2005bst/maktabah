@@ -8,6 +8,7 @@ export default function POS(props) {
   const [clientName, setClientName] = useState('')
   const [clientNameError, setClientNameError] = useState(false)
   const [showLists, setShowLists] = useState(false)
+  const [ticketData, setTicketData] = useState(null)
   const isPremium = currentUser?.plan === 'premium'
 
   // Loyalty state
@@ -70,6 +71,18 @@ export default function POS(props) {
       pointsRedeemed: ptsToRedeem,
       pointsEarned,
     })
+    const now = new Date()
+    setTicketData({
+      storeName: currentUser?.storeName || 'Maktabah',
+      clientName: clientName.trim() || selectedCard?.name || '',
+      cart: [...cart],
+      rawTotal,
+      discountDh,
+      ptsToRedeem,
+      total: finalTotal,
+      date: now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    })
     setActive(false); setCart([]); setClientName(''); setClientNameError(false)
     setSelectedCard(null); setPtsToRedeem(0); setShowLoyalty(false)
   }
@@ -96,21 +109,24 @@ export default function POS(props) {
 
   if (!active) {
     return (
-      <div style={{
-        minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'column', gap: 20,
-      }}>
-        <div style={{ fontSize: 64 }}>🛒</div>
-        <div style={{ fontSize: 24, fontWeight: 700, color: '#1D2433' }}>{t('posTitle')}</div>
-        <div style={{ fontSize: 15, color: '#6B7280' }}>{t('posSubtitle')}</div>
-        <button onClick={startSale} style={{
-          marginTop: 8, padding: '14px 48px', background: '#1D9E75', color: '#fff',
-          border: 'none', borderRadius: 12, fontSize: 18, fontWeight: 700, cursor: 'pointer',
-          boxShadow: '0 4px 16px rgba(29,158,117,0.35)',
+      <>
+        <div style={{
+          minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 20,
         }}>
-          {t('newSale')}
-        </button>
-      </div>
+          <div style={{ fontSize: 64 }}>🛒</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#1D2433' }}>{t('posTitle')}</div>
+          <div style={{ fontSize: 15, color: '#6B7280' }}>{t('posSubtitle')}</div>
+          <button onClick={startSale} style={{
+            marginTop: 8, padding: '14px 48px', background: '#1D9E75', color: '#fff',
+            border: 'none', borderRadius: 12, fontSize: 18, fontWeight: 700, cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(29,158,117,0.35)',
+          }}>
+            {t('newSale')}
+          </button>
+        </div>
+        {ticketData && <PrintTicketModal data={ticketData} onClose={() => setTicketData(null)} />}
+      </>
     )
   }
 
@@ -268,6 +284,7 @@ export default function POS(props) {
           onLoad={loadList} onClose={() => setShowLists(false)} t={t}
         />
       )}
+
     </div>
   )
 }
@@ -564,6 +581,172 @@ function ListsModal({ cities, schools, lists, listItems, products, onLoad, onClo
               </div>
             )
           })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PrintTicketModal({ data, onClose }) {
+  const { storeName, clientName, cart, rawTotal, discountDh, ptsToRedeem, total, date, time } = data
+
+  const handlePrint = () => {
+    const w = window.open('', '_blank', 'width=420,height=700,scrollbars=yes')
+    const lines = cart.map(item => {
+      const lineTotal = formatMoney(item.price * item.quantity)
+      const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name
+      const qtyPrice = `${item.quantity} x ${formatMoney(item.price)} DH`
+      return `
+        <tr>
+          <td style="padding:4px 0; font-size:13px;">${name}</td>
+          <td style="padding:4px 0; font-size:12px; color:#555; text-align:center;">${qtyPrice}</td>
+          <td style="padding:4px 0; font-size:13px; font-weight:700; text-align:right;">${lineTotal} DH</td>
+        </tr>`
+    }).join('')
+
+    const discountRow = discountDh > 0 ? `
+      <tr><td colspan="3"><hr style="border:none;border-top:1px dashed #ccc;margin:8px 0"/></td></tr>
+      <tr>
+        <td colspan="2" style="font-size:12px;color:#555;padding:2px 0;">Sous-total</td>
+        <td style="font-size:12px;text-align:right;padding:2px 0;">${formatMoney(rawTotal)} DH</td>
+      </tr>
+      <tr>
+        <td colspan="2" style="font-size:12px;color:#7C3AED;padding:2px 0;">⭐ Réduction (${ptsToRedeem} pts)</td>
+        <td style="font-size:12px;color:#7C3AED;text-align:right;padding:2px 0;">−${formatMoney(discountDh)} DH</td>
+      </tr>` : ''
+
+    w.document.write(`<!DOCTYPE html><html><head><title>Ticket</title>
+      <style>
+        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; width: 340px; }
+        @media print { body { padding: 8px; } }
+        table { width: 100%; border-collapse: collapse; }
+        .header { text-align: center; margin-bottom: 12px; }
+        .sep { border: none; border-top: 2px dashed #999; margin: 10px 0; }
+        .sep-thin { border: none; border-top: 1px dashed #ccc; margin: 6px 0; }
+        .total-row td { font-size: 17px; font-weight: 900; padding-top: 8px; }
+        .thanks { text-align: center; font-size: 12px; color: #666; margin-top: 14px; }
+      </style>
+    </head><body>
+      <div class="header">
+        <div style="font-size:18px;font-weight:900;letter-spacing:1px;">${storeName}</div>
+        <div style="font-size:11px;color:#666;margin-top:4px;">${date} &nbsp;|&nbsp; ${time}</div>
+        ${clientName ? `<div style="font-size:12px;margin-top:4px;"><strong>Client :</strong> ${clientName}</div>` : ''}
+      </div>
+      <hr class="sep"/>
+      <table>
+        <thead>
+          <tr style="font-size:11px;color:#888;">
+            <th style="text-align:left;padding-bottom:6px;">Produit</th>
+            <th style="text-align:center;padding-bottom:6px;">Qté × Prix</th>
+            <th style="text-align:right;padding-bottom:6px;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lines}
+        </tbody>
+      </table>
+      ${discountRow}
+      <hr class="sep"/>
+      <table>
+        <tr class="total-row">
+          <td colspan="2">TOTAL</td>
+          <td style="text-align:right;">${formatMoney(total)} DH</td>
+        </tr>
+      </table>
+      <hr class="sep"/>
+      <div class="thanks">Merci de votre visite ! ✦ شكراً لزيارتكم</div>
+    </body></html>`)
+    w.document.close()
+    setTimeout(() => { w.focus(); w.print() }, 250)
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 300,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }} onClick={onClose}>
+      <div style={{
+        background: '#fff', borderRadius: 16, width: 400, maxHeight: '90vh',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+      }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>🧾 Ticket de caisse</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9CA3AF' }}>×</button>
+        </div>
+
+        {/* Ticket preview */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '20px 24px', fontFamily: "'Courier New', monospace" }}>
+          {/* Store name */}
+          <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 1 }}>{storeName}</div>
+            <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>{date} &nbsp;|&nbsp; {time}</div>
+            {clientName && <div style={{ fontSize: 12, marginTop: 4 }}><strong>Client :</strong> {clientName}</div>}
+          </div>
+
+          <div style={{ borderTop: '2px dashed #bbb', margin: '10px 0' }} />
+
+          {/* Column headers */}
+          <div style={{ display: 'flex', fontSize: 10, color: '#999', fontWeight: 700, marginBottom: 6, gap: 4 }}>
+            <span style={{ flex: 1 }}>PRODUIT</span>
+            <span style={{ width: 110, textAlign: 'center' }}>QTÉ × PRIX</span>
+            <span style={{ width: 70, textAlign: 'right' }}>TOTAL</span>
+          </div>
+
+          {/* Cart items */}
+          {cart.map(item => (
+            <div key={item.id} style={{ display: 'flex', fontSize: 13, marginBottom: 5, gap: 4, alignItems: 'baseline' }}>
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+              <span style={{ width: 110, textAlign: 'center', color: '#555', fontSize: 11 }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: '#1D2433' }}>×{item.quantity}</span>
+                {' '}{formatMoney(item.price)} DH
+              </span>
+              <span style={{ width: 70, textAlign: 'right', fontWeight: 700 }}>{formatMoney(item.price * item.quantity)} DH</span>
+            </div>
+          ))}
+
+          <div style={{ borderTop: '2px dashed #bbb', margin: '10px 0' }} />
+
+          {/* Subtotal + discount */}
+          {discountDh > 0 && (
+            <div style={{ fontSize: 12, marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', marginBottom: 2 }}>
+                <span>Sous-total</span>
+                <span>{formatMoney(rawTotal)} DH</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#7C3AED', fontWeight: 600 }}>
+                <span>⭐ Réduction ({ptsToRedeem} pts)</span>
+                <span>−{formatMoney(discountDh)} DH</span>
+              </div>
+            </div>
+          )}
+
+          {/* Total */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 18, fontWeight: 900, marginTop: 6 }}>
+            <span>TOTAL</span>
+            <span style={{ color: '#1D9E75' }}>{formatMoney(total)} DH</span>
+          </div>
+
+          <div style={{ borderTop: '2px dashed #bbb', margin: '10px 0' }} />
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#888' }}>Merci de votre visite ! ✦ شكراً لزيارتكم</div>
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #E5E7EB', display: 'flex', gap: 10 }}>
+          <button onClick={handlePrint} style={{
+            flex: 1, padding: '11px 0', background: 'linear-gradient(135deg, #1D9E75, #16a364)',
+            color: '#fff', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer',
+          }}>
+            🖨️ Imprimer
+          </button>
+          <button onClick={onClose} style={{
+            padding: '11px 20px', background: '#F3F4F6', color: '#374151',
+            border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+          }}>
+            Fermer
+          </button>
         </div>
       </div>
     </div>
