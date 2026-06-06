@@ -1,16 +1,16 @@
-import { PLANS, FREE_FEATURES, STANDARD_FEATURES, PREMIUM_FEATURES, GOLD_FEATURES } from '../constants.js'
+import { PLANS, FREE_FEATURES, STANDARD_FEATURES, PREMIUM_FEATURES } from '../constants.js'
 
 const PLAN_FEATURES = {
   gratuit:  FREE_FEATURES,
   standard: STANDARD_FEATURES,
   premium:  PREMIUM_FEATURES,
-  gold:     GOLD_FEATURES,
 }
 
-function formatPrice(info) {
-  if (info.price === 0)    return 'Gratuit'
-  if (info.price === null) return 'Contacter l\'admin'
-  return `${info.price} DH/an`
+function PriceDisplay({ info }) {
+  if (info.monthly === 0) return <span>Gratuit</span>
+  return (
+    <div style={{ fontWeight: 800 }}>{info.annual} DH/an</div>
+  )
 }
 
 export default function PlansModal({ currentUser, onChangePlan, onClose }) {
@@ -23,33 +23,27 @@ export default function PlansModal({ currentUser, onChangePlan, onClose }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
     }} onClick={onClose}>
       <div style={{
-        background: '#fff', borderRadius: 20, padding: 36, maxWidth: 920, width: '95%',
+        background: '#fff', borderRadius: 20, padding: 36, maxWidth: 720, width: '95%',
         boxShadow: '0 12px 60px rgba(0,0,0,0.22)',
       }} onClick={e => e.stopPropagation()}>
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontWeight: 800, fontSize: 22, color: '#1D2433', marginBottom: 6 }}>
-            Nos plans
-          </div>
-          <div style={{ fontSize: 14, color: '#6B7280' }}>
-            Sélectionnez le plan qui correspond à vos besoins
-          </div>
+          <div style={{ fontWeight: 800, fontSize: 22, color: '#1D2433', marginBottom: 6 }}>Nos plans</div>
+          <div style={{ fontSize: 14, color: '#6B7280' }}>Sélectionnez le plan qui correspond à vos besoins</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }}>
-          {['gratuit', 'standard', 'premium', 'gold'].map(p => {
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }}>
+          {['gratuit', 'standard', 'premium'].map(p => {
             const info = PLANS[p]
             const isCurrent = p === currentPlan
             const features = PLAN_FEATURES[p]
-            const isGold = p === 'gold'
             return (
               <div key={p} style={{
-                border: `2px solid ${isCurrent ? info.color : isGold ? '#D4A017' : '#E5E7EB'}`,
+                border: `2px solid ${isCurrent ? info.color : '#E5E7EB'}`,
                 borderRadius: 14, padding: 20,
-                background: isCurrent ? info.bg : isGold ? '#FFFDF0' : '#FAFAFA',
+                background: isCurrent ? info.bg : '#FAFAFA',
                 display: 'flex', flexDirection: 'column',
                 position: 'relative',
-                boxShadow: isGold ? '0 4px 20px rgba(161,98,7,0.15)' : 'none',
               }}>
                 {isCurrent && (
                   <div style={{
@@ -61,26 +55,12 @@ export default function PlansModal({ currentUser, onChangePlan, onClose }) {
                     Plan actuel
                   </div>
                 )}
-                {isGold && !isCurrent && (
-                  <div style={{
-                    position: 'absolute', top: -11, left: '50%', transform: 'translateX(-50%)',
-                    background: 'linear-gradient(90deg, #A16207, #D97706)', color: '#fff',
-                    fontSize: 10, fontWeight: 700, padding: '3px 12px', borderRadius: 20,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    ✦ À vie
-                  </div>
-                )}
 
                 <div style={{ fontWeight: 700, fontSize: 16, color: '#1D2433', marginBottom: 4 }}>
                   {info.label}
                 </div>
-                <div style={{
-                  fontWeight: 800, fontSize: isGold ? 13 : 24,
-                  color: info.color, marginBottom: 14,
-                  lineHeight: isGold ? 1.4 : 1,
-                }}>
-                  {formatPrice(info)}
+                <div style={{ fontWeight: 800, fontSize: 22, color: info.color, marginBottom: 14, lineHeight: 1.2 }}>
+                  <PriceDisplay info={info} />
                 </div>
 
                 <div style={{ fontSize: 12, color: '#555', flex: 1, marginBottom: 16 }}>
@@ -96,8 +76,7 @@ export default function PlansModal({ currentUser, onChangePlan, onClose }) {
                   <div style={{
                     textAlign: 'center', fontSize: 12, fontWeight: 700,
                     color: info.color, padding: '8px 0',
-                    border: `1px solid ${info.color}`, borderRadius: 8,
-                    background: '#fff',
+                    border: `1px solid ${info.color}`, borderRadius: 8, background: '#fff',
                   }}>
                     Plan actif
                   </div>
@@ -105,25 +84,10 @@ export default function PlansModal({ currentUser, onChangePlan, onClose }) {
                   <div style={{
                     textAlign: 'center', fontSize: 12, fontWeight: 700,
                     color: '#7C3AED', padding: '8px 0',
-                    border: '1px solid #7C3AED', borderRadius: 8,
-                    background: '#F5F3FF',
+                    border: '1px solid #7C3AED', borderRadius: 8, background: '#F5F3FF',
                   }}>
                     ⏳ En attente d'approbation
                   </div>
-                ) : isGold ? (
-                  <a
-                    href="mailto:unundeux3@gmail.com?subject=Plan Gold - Maktaba POS"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: 'block', width: '100%', padding: '10px 0',
-                      background: 'linear-gradient(90deg, #A16207, #D97706)', color: '#fff',
-                      border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700,
-                      cursor: 'pointer', textAlign: 'center', textDecoration: 'none',
-                    }}
-                  >
-                    Contacter l'admin
-                  </a>
                 ) : (
                   <button onClick={() => onChangePlan(p)} disabled={!!pendingPlan} style={{
                     width: '100%', padding: '10px 0',

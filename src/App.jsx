@@ -154,7 +154,6 @@ const DEMO_LIST_ITEMS = [
 
 const daysAgo = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d }
 const fmtD = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-const fmtT = (d) => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
 const DEMO_SALES = [
   { id: 'sa1', storeId: 'demo', clientName: 'Fatima Zahra', date: fmtD(daysAgo(0)), time: '09:15', total: 74,  paid: true,  rawDate: daysAgo(0).toISOString() },
@@ -238,6 +237,25 @@ const DEMO_SALE_ITEMS = [
   { saleId: 'sa8', productId: 'p6',  productName: 'Stylo bille rouge',  quantity: 4, price: 2,   costPrice: 0.8 },
 ]
 
+function useLocalStorage(key, initialValue) {
+  const [state, setState] = useState(() => {
+    try {
+      const item = window.localStorage.getItem(key)
+      return item !== null ? JSON.parse(item) : initialValue
+    } catch {
+      return initialValue
+    }
+  })
+  const setValue = useCallback((value) => {
+    setState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value
+      try { window.localStorage.setItem(key, JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [key])
+  return [state, setValue]
+}
+
 function Toast({ msg, onDone }) {
   return (
     <div
@@ -255,30 +273,30 @@ function Toast({ msg, onDone }) {
 }
 
 export default function App() {
-  const [view, setView] = useState('login') // 'login' | 'register' | 'store' | 'admin'
-  const [storePage, setStorePage] = useState('pos')
-  const [currentUser, setCurrentUser] = useState(null)
-  const [lang, setLang] = useState('fr')
+  const [view, setView] = useLocalStorage('mkb_view', 'login')
+  const [storePage, setStorePage] = useLocalStorage('mkb_storePage', 'pos')
+  const [currentUser, setCurrentUser] = useLocalStorage('mkb_currentUser', null)
+  const [lang, setLang] = useLocalStorage('mkb_lang', 'fr')
   const [toast, setToast] = useState(null)
   const [showPlans, setShowPlans] = useState(false)
 
   // All data
-  const [stores, setStores] = useState(INITIAL_STORES)
-  const [categories, setCategories] = useState(DEMO_CATS)
-  const [products, setProducts] = useState(DEMO_PRODUCTS)
-  const [cities, setCities] = useState(DEMO_CITIES)
-  const [schools, setSchools] = useState(DEMO_SCHOOLS)
-  const [lists, setLists] = useState(DEMO_LISTS)
-  const [listItems, setListItems] = useState(DEMO_LIST_ITEMS)
-  const [sales, setSales] = useState(DEMO_SALES)
-  const [saleItems, setSaleItems] = useState(DEMO_SALE_ITEMS)
-  const [loyaltySettings, setLoyaltySettings] = useState(DEMO_LOYALTY_SETTINGS)
-  const [loyaltyCards, setLoyaltyCards] = useState(DEMO_LOYALTY_CARDS)
+  const [stores, setStores] = useLocalStorage('mkb_stores', INITIAL_STORES)
+  const [categories, setCategories] = useLocalStorage('mkb_categories', DEMO_CATS)
+  const [products, setProducts] = useLocalStorage('mkb_products', DEMO_PRODUCTS)
+  const [cities, setCities] = useLocalStorage('mkb_cities', DEMO_CITIES)
+  const [schools, setSchools] = useLocalStorage('mkb_schools', DEMO_SCHOOLS)
+  const [lists, setLists] = useLocalStorage('mkb_lists', DEMO_LISTS)
+  const [listItems, setListItems] = useLocalStorage('mkb_listItems', DEMO_LIST_ITEMS)
+  const [sales, setSales] = useLocalStorage('mkb_sales', DEMO_SALES)
+  const [saleItems, setSaleItems] = useLocalStorage('mkb_saleItems', DEMO_SALE_ITEMS)
+  const [loyaltySettings, setLoyaltySettings] = useLocalStorage('mkb_loyaltySettings', DEMO_LOYALTY_SETTINGS)
+  const [loyaltyCards, setLoyaltyCards] = useLocalStorage('mkb_loyaltyCards', DEMO_LOYALTY_CARDS)
   // Global lists (admin-managed, shared with all stores)
-  const [adminCities, setAdminCities] = useState(DEMO_ADMIN_CITIES)
-  const [adminSchools, setAdminSchools] = useState(DEMO_ADMIN_SCHOOLS)
-  const [adminLists, setAdminLists] = useState(DEMO_ADMIN_LISTS)
-  const [adminListItems, setAdminListItems] = useState(DEMO_ADMIN_LIST_ITEMS)
+  const [adminCities, setAdminCities] = useLocalStorage('mkb_adminCities', DEMO_ADMIN_CITIES)
+  const [adminSchools, setAdminSchools] = useLocalStorage('mkb_adminSchools', DEMO_ADMIN_SCHOOLS)
+  const [adminLists, setAdminLists] = useLocalStorage('mkb_adminLists', DEMO_ADMIN_LISTS)
+  const [adminListItems, setAdminListItems] = useLocalStorage('mkb_adminListItems', DEMO_ADMIN_LIST_ITEMS)
 
   const t = useT(lang)
 
@@ -340,6 +358,7 @@ export default function App() {
       setView('store')
       setStorePage('pos')
     }
+    return { ok: true }
   }, [])
 
   // --- Store data helpers (scoped to currentUser.id) ---
@@ -622,13 +641,16 @@ export default function App() {
 
   const rtl = lang === 'ar'
 
-  if (view === 'login' || view === 'register') {
+  // Safety guard: if persisted view is store/admin but no user, reset to login
+  const safeView = (view === 'store' || view === 'admin') && !currentUser ? 'login' : view
+
+  if (safeView === 'login' || safeView === 'register') {
     return (
       <>
         <style>{`@keyframes fadeInDown{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>
         {toast && <Toast msg={toast} />}
         <Auth
-          view={view} setView={setView}
+          view={safeView} setView={setView}
           login={login} register={register}
           t={t} lang={lang} setLang={setLang} rtl={rtl}
         />
@@ -636,7 +658,7 @@ export default function App() {
     )
   }
 
-  if (view === 'admin') {
+  if (safeView === 'admin') {
     return (
       <>
         <style>{`@keyframes fadeInDown{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}`}</style>

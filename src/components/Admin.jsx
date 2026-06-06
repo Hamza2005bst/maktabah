@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PLANS, formatMoney, uid, GRADE_TEMPLATES } from '../constants.js'
+import { PLANS, formatMoney } from '../constants.js'
 import AdminLists from './AdminLists.jsx'
 
 const LANGS = [
@@ -11,10 +11,9 @@ const LANGS = [
 export default function Admin({ t, lang, setLang, stores, updateStore, toggleStoreActive, deleteStore, allSales, allSaleItems, logout,
   adminCities, adminSchools, adminLists, adminListItems,
   addAdminCity, deleteAdminCity, addAdminSchool, deleteAdminSchool, saveAdminList, deleteAdminList }) {
-  const [tab, setTab] = useState('subscriptions')
-
   const storeList = stores.filter(s => s.role !== 'admin' && !s.pending)
   const pendingList = stores.filter(s => s.pending || s.pendingPlan)
+  const [tab, setTab] = useState(() => pendingList.length > 0 ? 'pendingRequests' : 'subscriptions')
 
   return (
     <div style={{ minHeight: '100vh', background: '#F4F6FA' }}>
