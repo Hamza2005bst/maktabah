@@ -69,6 +69,15 @@ function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
 
+  const today = new Date().toISOString().split('T')[0]
+  const in7Days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const expiringSoon = stores.filter(s =>
+    s.plan !== 'gratuit' && s.endDate && s.active && s.endDate >= today && s.endDate <= in7Days
+  )
+  const expired = stores.filter(s =>
+    s.plan !== 'gratuit' && s.endDate && s.active && s.endDate < today
+  )
+
   const openEdit = (store) => {
     setEditingId(store.id)
     setEditForm({ plan: store.plan, paid: store.paid, active: store.active, startDate: store.startDate || '', endDate: store.endDate || '' })
@@ -86,6 +95,25 @@ function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
   }
 
   return (
+    <div>
+      {expired.length > 0 && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>🔴</span>
+          <div>
+            <strong style={{ color: '#991B1B', fontSize: 13 }}>Abonnements expirés ({expired.length}) — à renouveler :</strong>
+            <span style={{ color: '#B91C1C', fontSize: 13, marginLeft: 8 }}>{expired.map(s => s.storeName).join(', ')}</span>
+          </div>
+        </div>
+      )}
+      {expiringSoon.length > 0 && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10, padding: '12px 18px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>⚠️</span>
+          <div>
+            <strong style={{ color: '#92400E', fontSize: 13 }}>{t('expiringSoon')} :</strong>
+            <span style={{ color: '#B45309', fontSize: 13, marginLeft: 8 }}>{expiringSoon.map(s => `${s.storeName} (${s.endDate})`).join(', ')}</span>
+          </div>
+        </div>
+      )}
     <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 1px 6px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
@@ -98,8 +126,10 @@ function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
         <tbody>
           {stores.map(store => {
             const planInfo = PLANS[store.plan] || {}
+            const isExpired = store.plan !== 'gratuit' && store.endDate && store.endDate < today
+            const isExpiringSoon = !isExpired && store.plan !== 'gratuit' && store.endDate && store.endDate >= today && store.endDate <= in7Days
             return (
-              <tr key={store.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+              <tr key={store.id} style={{ borderBottom: '1px solid #F3F4F6', background: isExpired ? '#FFF5F5' : isExpiringSoon ? '#FFFDF0' : 'transparent' }}>
                 <td style={{ padding: '14px 16px', fontWeight: 600, fontSize: 14 }}>{store.storeName}</td>
                 <td style={{ padding: '14px 16px', fontSize: 13, color: '#6B7280' }}>
                   <div>{store.phone}</div>
@@ -187,6 +217,7 @@ function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
           )}
         </tbody>
       </table>
+    </div>
     </div>
   )
 }

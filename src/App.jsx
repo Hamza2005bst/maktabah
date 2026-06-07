@@ -318,6 +318,13 @@ export default function App() {
     const store = stores.find(s => s.phone === identifier && s.password === password && s.role !== 'admin')
     if (!store) return { ok: false, error: 'invalidCredentials' }
     if (!store.active) return { ok: false, error: 'accountInactive' }
+    if (store.plan !== 'gratuit' && store.endDate) {
+      const today = new Date().toISOString().split('T')[0]
+      if (store.endDate < today) {
+        setStores(prev => prev.map(s => s.id === store.id ? { ...s, active: false } : s))
+        return { ok: false, error: 'subscriptionExpired' }
+      }
+    }
     setCurrentUser(store)
     setView('store')
     setStorePage('pos')

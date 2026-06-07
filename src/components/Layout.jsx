@@ -15,8 +15,17 @@ const LANGS = [
   { code: 'en', label: 'EN' },
 ]
 
+function getDaysLeft(endDate) {
+  if (!endDate) return null
+  const diff = new Date(endDate) - new Date(new Date().toISOString().split('T')[0])
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
+
 export default function Layout({ t, lang, setLang, rtl, currentUser, storePage, setStorePage, logout, children }) {
   const planInfo = currentUser?.plan ? PLANS[currentUser.plan] : null
+
+  const daysLeft = currentUser?.plan !== 'gratuit' ? getDaysLeft(currentUser?.endDate) : null
+  const showExpiryBanner = daysLeft !== null && daysLeft <= 7
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', direction: rtl ? 'rtl' : 'ltr' }}>
@@ -104,6 +113,24 @@ export default function Layout({ t, lang, setLang, rtl, currentUser, storePage, 
             })}
           </div>
         </div>
+
+        {/* Expiry banner */}
+        {showExpiryBanner && (
+          <div style={{
+            background: daysLeft <= 0 ? '#FEF2F2' : '#FFFBEB',
+            borderBottom: `1px solid ${daysLeft <= 0 ? '#FECACA' : '#FDE68A'}`,
+            padding: '10px 28px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            fontSize: 13, fontWeight: 600,
+            color: daysLeft <= 0 ? '#991B1B' : '#92400E',
+          }}>
+            <span style={{ fontSize: 16 }}>{daysLeft <= 0 ? '🔴' : '⚠️'}</span>
+            {daysLeft <= 0
+              ? t('subscriptionExpired')
+              : `${t('subExpiresSoon')} ${daysLeft} ${t('daysLeft')}`
+            }
+          </div>
+        )}
 
         {/* Page content */}
         <div style={{ flex: 1, overflow: 'auto' }}>
