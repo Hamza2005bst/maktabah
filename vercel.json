@@ -1,15 +1,5 @@
 {
-  "experimentalServices": {
-    "frontend": {
-      "routePrefix": "/",
-      "buildCommand": "npm run build",
-      "framework": "vite"
-    },
-    "backend": {
-      "routePrefix": "/_/backend",
-      "rootDirectory": "backend",
-      "buildCommand": "npm install",
-      "startCommand": "npm start"
-    }
-  }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/" }
+  ]
 }
