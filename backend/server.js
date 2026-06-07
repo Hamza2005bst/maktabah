@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
+const { initSchema } = require('./db/database')
 
 const app = express()
 
@@ -33,4 +34,6 @@ app.use((err, req, res, next) => {
 })
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT, () => console.log(`Maktabah backend running on http://localhost:${PORT}`))
+initSchema()
+  .then(() => app.listen(PORT, () => console.log(`Maktabah backend running on http://localhost:${PORT}`)))
+  .catch(err => { console.error('Échec initialisation schema:', err); process.exit(1) })

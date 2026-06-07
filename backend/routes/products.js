@@ -1,5 +1,5 @@
 const express = require('express')
-const db = require('../db/database')
+const { query } = require('../db/database')
 const { auth } = require('../middleware/auth')
 
 const router = express.Router()
@@ -8,34 +8,68 @@ const LIMITS = { gratuit: 3, standard: Infinity, premium: Infinity }
 
 router.use(auth)
 
-router.get('/', (req, res) => res.json(db.prepare('SELECT * FROM products WHERE storeId = ?').all(req.user.id)))
-
-router.post('/', (req, res) => {
-  const { name, price, costPrice, categoryId } = req.body
-  if (!name || !categoryId) return res.status(400).json({ error: 'Champs manquants' })
-  const limit = LIMITS[req.user.plan] ?? Infinity
-  const count = db.prepare('SELECT COUNT(*) as n FROM products WHERE storeId = ? AND categoryId = ?').get(req.user.id, categoryId).n
-  if (count >= limit) return res.status(403).json({ error: 'planLimit' })
-  const id = uid()
-  db.prepare('INSERT INTO products VALUES (?,?,?,?,?,?)').run(id, name, price ?? 0, costPrice ?? 0, categoryId, req.user.id)
-  res.status(201).json({ id, name, price: price ?? 0, costPrice: costPrice ?? 0, categoryId, storeId: req.user.id })
+router.get('/', async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM products WHERE "storeId" = $1', [req.user.id])
+    res.json(result.rows)
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
-router.put('/:id', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ? AND storeId = ?').get(req.params.id, req.user.id)
-  if (!product) return res.status(404).json({ error: 'Produit introuvable' })
-  const { name, price, costPrice, categoryId } = req.body
-  db.prepare('UPDATE products SET name=?,price=?,costPrice=?,categoryId=? WHERE id=?')
-    .run(name ?? product.name, price ?? product.price, costPrice ?? product.costPrice, categoryId ?? product.categoryId, req.params.id)
-  res.json({ ...product, name: name ?? product.name, price: price ?? product.price, costPrice: costPrice ?? product.costPrice, categoryId: categoryId ?? product.categoryId })
+router.post('/', async (req, res) => {
+  try {
+    const { name, price, costPrice, categoryId } = req.body
+    if (!name || !categoryId) return res.status(400).json({ error: 'Champs manquants' })
+    const limit = LIMITS[req.user.plan] ?? Infinity
+    const countResult = await query(
+      'SELECT COUNT(*) as n FROM products WHERE "storeId" = $1 AND "categoryId" = $2',
+      [req.user.id, categoryId]
+    )
+    if (parseInt(countResult.rows[0].n) >= limit) return res.status(403).json({ error: 'planLimit' })
+    const id = uid()
+    await query(
+      'INSERT INTO products (id, name, price, "costPrice", "categoryId", "storeId") VALUES ($1, $2, $3, $4, $5, $6)',
+      [id, name, price ?? 0, costPrice ?? 0, categoryId, req.user.id]
+    )
+    res.status(201).json({ id, name, price: price ?? 0, costPrice: costPrice ?? 0, categoryId, storeId: req.user.id })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
-router.delete('/:id', (req, res) => {
-  const product = db.prepare('SELECT * FROM products WHERE id = ? AND storeId = ?').get(req.params.id, req.user.id)
-  if (!product) return res.status(404).json({ error: 'Produit introuvable' })
-  db.prepare('DELETE FROM list_items WHERE productId = ?').run(req.params.id)
-  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id)
-  res.json({ ok: true })
+router.put('/:id', async (req, res) => {
+  try {
+    const productResult = await query('SELECT * FROM products WHERE id = $1 AND "storeId" = $2', [req.params.id, req.user.id])
+    const product = productResult.rows[0]
+    if (!product) return res.status(404).json({ error: 'Produit introuvable' })
+    const { name, price, costPrice, categoryId } = req.body
+    await query(
+      'UPDATE products SET name=$1, price=$2, "costPrice"=$3, "categoryId"=$4 WHERE id=$5',
+      [name ?? product.name, price ?? product.price, costPrice ?? product.costPrice, categoryId ?? product.categoryId, req.params.id]
+    )
+    res.json({
+      ...product,
+      name: name ?? product.name,
+      price: price ?? product.price,
+      costPrice: costPrice ?? product.costPrice,
+      categoryId: categoryId ?? product.categoryId,
+    })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
+})
+
+router.delete('/:id', async (req, res) => {
+  try {
+    const productResult = await query('SELECT * FROM products WHERE id = $1 AND "storeId" = $2', [req.params.id, req.user.id])
+    if (!productResult.rows[0]) return res.status(404).json({ error: 'Produit introuvable' })
+    await query('DELETE FROM list_items WHERE "productId" = $1', [req.params.id])
+    await query('DELETE FROM products WHERE id = $1', [req.params.id])
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
 module.exports = router

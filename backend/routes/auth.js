@@ -1,7 +1,7 @@
 const express = require('express')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const db = require('../db/database')
+const { query } = require('../db/database')
 const { auth } = require('../middleware/auth')
 
 const router = express.Router()
@@ -14,50 +14,69 @@ function makeToken(store) {
 
 function sanitize(store) {
   const { password, ...rest } = store
-  return { ...rest, paid: !!rest.paid, active: !!rest.active, pending: !!rest.pending }
+  return rest
 }
 
-router.post('/login', (req, res) => {
-  const { identifier, password } = req.body
-  if (!identifier || !password) return res.status(400).json({ error: 'Champs manquants' })
+router.post('/login', async (req, res) => {
+  try {
+    const { identifier, password } = req.body
+    if (!identifier || !password) return res.status(400).json({ error: 'Champs manquants' })
 
-  let store = db.prepare('SELECT * FROM stores WHERE email = ? AND role = ?').get(identifier, 'admin')
-  if (!store) store = db.prepare('SELECT * FROM stores WHERE phone = ? AND role != ?').get(identifier, 'admin')
-  if (!store) return res.status(401).json({ error: 'invalidCredentials' })
-  if (!bcrypt.compareSync(password, store.password)) return res.status(401).json({ error: 'invalidCredentials' })
-  if (!store.active && store.role !== 'admin') return res.status(403).json({ error: 'accountInactive' })
+    let result = await query('SELECT * FROM stores WHERE email = $1 AND role = $2', [identifier, 'admin'])
+    let store = result.rows[0]
+    if (!store) {
+      result = await query('SELECT * FROM stores WHERE phone = $1 AND role != $2', [identifier, 'admin'])
+      store = result.rows[0]
+    }
+    if (!store) return res.status(401).json({ error: 'invalidCredentials' })
+    if (!bcrypt.compareSync(password, store.password)) return res.status(401).json({ error: 'invalidCredentials' })
+    if (!store.active && store.role !== 'admin') return res.status(403).json({ error: 'accountInactive' })
 
-  res.json({ token: makeToken(store), user: sanitize(store) })
+    res.json({ token: makeToken(store), user: sanitize(store) })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
-router.post('/register', (req, res) => {
-  const { storeName, phone, password, plan } = req.body
-  if (!storeName || !phone || !password || !plan) return res.status(400).json({ error: 'Champs manquants' })
-  if (password.length < 6) return res.status(400).json({ error: 'passwordTooShort' })
-  if (!/^\d{10}$/.test(phone)) return res.status(400).json({ error: 'phoneInvalid' })
-  if (!['gratuit', 'standard', 'premium'].includes(plan)) return res.status(400).json({ error: 'Plan invalide' })
+router.post('/register', async (req, res) => {
+  try {
+    const { storeName, phone, password, plan } = req.body
+    if (!storeName || !phone || !password || !plan) return res.status(400).json({ error: 'Champs manquants' })
+    if (password.length < 6) return res.status(400).json({ error: 'passwordTooShort' })
+    if (!/^\d{10}$/.test(phone)) return res.status(400).json({ error: 'phoneInvalid' })
+    if (!['gratuit', 'standard', 'premium'].includes(plan)) return res.status(400).json({ error: 'Plan invalide' })
 
-  const exists = db.prepare('SELECT id FROM stores WHERE phone = ?').get(phone)
-  if (exists) return res.status(409).json({ error: 'phoneExists' })
+    const existsResult = await query('SELECT id FROM stores WHERE phone = $1', [phone])
+    if (existsResult.rows[0]) return res.status(409).json({ error: 'phoneExists' })
 
-  const isGratuit = plan === 'gratuit'
-  const id = uid()
-  const hash = bcrypt.hashSync(password, 10)
-  const now = fmtDate(new Date())
+    const isGratuit = plan === 'gratuit'
+    const id = uid()
+    const hash = bcrypt.hashSync(password, 10)
+    const now = fmtDate(new Date())
 
-  db.prepare(`INSERT INTO stores (id,storeName,phone,email,password,plan,paid,active,pending,role,startDate,endDate,registeredAt) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-    .run(id, storeName, phone, '', hash, plan, 0, isGratuit ? 1 : 0, isGratuit ? 0 : 1, 'store', '', '', now)
+    await query(
+      `INSERT INTO stores (id, "storeName", phone, email, password, plan, paid, active, pending, role, "startDate", "endDate", "registeredAt") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [id, storeName, phone, '', hash, plan, false, isGratuit, !isGratuit, 'store', '', '', now]
+    )
 
-  const store = db.prepare('SELECT * FROM stores WHERE id = ?').get(id)
-  if (isGratuit) return res.status(201).json({ token: makeToken(store), user: sanitize(store) })
-  res.status(201).json({ message: 'pending' })
+    const storeResult = await query('SELECT * FROM stores WHERE id = $1', [id])
+    const store = storeResult.rows[0]
+    if (isGratuit) return res.status(201).json({ token: makeToken(store), user: sanitize(store) })
+    res.status(201).json({ message: 'pending' })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
-router.patch('/plan-request', auth, (req, res) => {
-  const { plan } = req.body
-  if (!plan || !['standard', 'premium'].includes(plan)) return res.status(400).json({ error: 'Plan invalide' })
-  db.prepare('UPDATE stores SET pendingPlan = ? WHERE id = ?').run(plan, req.user.id)
-  res.json({ ok: true, pendingPlan: plan })
+router.patch('/plan-request', auth, async (req, res) => {
+  try {
+    const { plan } = req.body
+    if (!plan || !['standard', 'premium'].includes(plan)) return res.status(400).json({ error: 'Plan invalide' })
+    await query('UPDATE stores SET "pendingPlan" = $1 WHERE id = $2', [plan, req.user.id])
+    res.json({ ok: true, pendingPlan: plan })
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur serveur' })
+  }
 })
 
 module.exports = router
