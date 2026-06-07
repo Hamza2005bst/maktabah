@@ -48,8 +48,8 @@ router.post('/', async (req, res) => {
     }
     if (opts.cardId) {
       await query(
-        'UPDATE loyalty_cards SET points = GREATEST(0, points - $1 + $2) WHERE id = $3',
-        [opts.pointsRedeemed || 0, opts.pointsEarned || 0, opts.cardId]
+        'UPDATE loyalty_cards SET points = GREATEST(0, points - $1 + $2) WHERE id = $3 AND "storeId" = $4',
+        [opts.pointsRedeemed || 0, opts.pointsEarned || 0, opts.cardId, req.user.id]
       )
     }
     res.status(201).json({
