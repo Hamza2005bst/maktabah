@@ -67,7 +67,7 @@ router.put('/stores/:id', async (req, res) => {
         data.pending != null ? !!data.pending : store.pending,
         data.startDate ?? store.startDate,
         data.endDate ?? store.endDate,
-        data.pendingPlan ?? store.pendingPlan,
+        data.pendingPlan !== undefined ? data.pendingPlan : store.pendingPlan,
         req.params.id,
       ]
     )
