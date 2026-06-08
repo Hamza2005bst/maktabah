@@ -57,7 +57,7 @@ export default function Admin({ t, lang, setLang, stores, updateStore, toggleSto
           ))}
         </div>
 
-        {tab === 'subscriptions' && <Subscriptions stores={storeList} updateStore={updateStore} toggleStoreActive={toggleStoreActive} t={t} />}
+        {tab === 'subscriptions' && <Subscriptions stores={storeList} updateStore={updateStore} toggleStoreActive={toggleStoreActive} deleteStore={deleteStore} t={t} />}
         {tab === 'pendingRequests' && <PendingRequests stores={pendingList} updateStore={updateStore} deleteStore={deleteStore} t={t} />}
         {tab === 'globalAnalytics' && <GlobalAnalytics stores={storeList} allSales={allSales} allSaleItems={allSaleItems} t={t} />}
       </div>
@@ -65,7 +65,7 @@ export default function Admin({ t, lang, setLang, stores, updateStore, toggleSto
   )
 }
 
-function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
+function Subscriptions({ stores, updateStore, toggleStoreActive, deleteStore, t }) {
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState({})
 
@@ -206,6 +206,12 @@ function Subscriptions({ stores, updateStore, toggleStoreActive, t }) {
                         color: store.active ? '#791F1F' : '#085041',
                       }}>{store.active ? t('deactivate') : t('activate')}</button>
                       <button onClick={() => openEdit(store)} style={{ padding: '5px 10px', background: '#F3F4F6', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer' }}>✏️</button>
+                      {!store.active && (
+                        <button onClick={() => { if (window.confirm(`Supprimer "${store.storeName}" ?`)) deleteStore(store.id) }} style={{
+                          padding: '5px 10px', background: '#FCEBEB', color: '#791F1F',
+                          border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontWeight: 600,
+                        }}>🗑️</button>
+                      )}
                     </div>
                   )}
                 </td>
