@@ -61,7 +61,7 @@ function LoginForm({ login, setView, t }) {
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>{t('phone')}</label>
+        <label style={labelStyle}>{t('phoneOrEmail')}</label>
         <input
           style={inputStyle} type="text" value={phone}
           onChange={e => setPhone(e.target.value)} placeholder="0612345678"

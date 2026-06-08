@@ -4,7 +4,7 @@ const translations = {
     pos: 'Caisse', products: 'Produits', lists: 'Listes', sales: 'Ventes', analytics: 'Analytics',
     logout: 'Déconnexion', plan: 'Plan',
     // Auth
-    login: 'Connexion', register: 'Créer un compte', phone: 'Numéro de téléphone',
+    login: 'Connexion', register: 'Créer un compte', phone: 'Numéro de téléphone', phoneOrEmail: 'Téléphone ou Email',
     password: 'Mot de passe', email: 'Email', confirmPassword: 'Confirmer le mot de passe',
     storeName: 'Nom de la librairie', loginBtn: 'Se connecter', registerBtn: "S'inscrire",
     noAccount: "Pas de compte ?", hasAccount: 'Déjà un compte ?', invalidCredentials: 'Identifiants incorrects',
@@ -98,7 +98,7 @@ const translations = {
   ar: {
     pos: 'نقطة البيع', products: 'المنتجات', lists: 'القوائم', sales: 'المبيعات', analytics: 'الإحصاء',
     logout: 'تسجيل الخروج', plan: 'الخطة',
-    login: 'تسجيل الدخول', register: 'إنشاء حساب', phone: 'رقم الهاتف',
+    login: 'تسجيل الدخول', register: 'إنشاء حساب', phone: 'رقم الهاتف', phoneOrEmail: 'الهاتف أو البريد الإلكتروني',
     password: 'كلمة المرور', email: 'البريد الإلكتروني', storeName: 'اسم المكتبة',
     loginBtn: 'دخول', registerBtn: 'تسجيل', noAccount: 'ليس لديك حساب؟',
     hasAccount: 'لديك حساب؟', invalidCredentials: 'بيانات الدخول غير صحيحة',
@@ -174,7 +174,7 @@ const translations = {
   en: {
     pos: 'POS', products: 'Products', lists: 'Lists', sales: 'Sales', analytics: 'Analytics',
     logout: 'Logout', plan: 'Plan',
-    login: 'Login', register: 'Create account', phone: 'Phone number',
+    login: 'Login', register: 'Create account', phone: 'Phone number', phoneOrEmail: 'Phone or Email',
     password: 'Password', email: 'Email', storeName: 'Store name',
     loginBtn: 'Sign in', registerBtn: 'Sign up', noAccount: "Don't have an account?",
     hasAccount: 'Already have an account?', invalidCredentials: 'Invalid credentials',
