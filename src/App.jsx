@@ -182,6 +182,15 @@ export default function App() {
     } catch {}
   }, [])
 
+  // Auto-refresh admin data every 15 seconds to receive new client requests
+  useEffect(() => {
+    if (view !== 'admin') return
+    const interval = setInterval(() => {
+      api.admin.getStores().then(storesData => setStores(storesData)).catch(() => {})
+    }, 15000)
+    return () => clearInterval(interval)
+  }, [view])
+
   // ─── Auth ────────────────────────────────────────────────────────────────────
 
   const logout = useCallback(() => {
