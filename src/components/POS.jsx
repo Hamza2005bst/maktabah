@@ -617,8 +617,9 @@ function PrintTicketModal({ data, onClose }) {
 
     w.document.write(`<!DOCTYPE html><html><head><title>Ticket</title>
       <style>
-        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; width: 340px; }
-        @media print { body { padding: 8px; } }
+        @page { size: 100mm auto; margin: 5mm; }
+        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; width: 90mm; }
+        @media print { body { padding: 0; width: 90mm; } }
         table { width: 100%; border-collapse: collapse; }
         .header { text-align: center; margin-bottom: 12px; }
         .sep { border: none; border-top: 2px dashed #999; margin: 10px 0; }
