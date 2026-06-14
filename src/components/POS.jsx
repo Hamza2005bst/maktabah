@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { COLORS, formatMoney, uid } from '../constants.js'
 
 export default function POS(props) {
@@ -16,9 +16,9 @@ export default function POS(props) {
   const [loyaltySearch, setLoyaltySearch] = useState('')
   const [selectedCard, setSelectedCard] = useState(null)
   const [ptsToRedeem, setPtsToRedeem] = useState(0)
-  const [scanValue, setScanValue] = useState('')
-  const [scanError, setScanError] = useState(null)
-  const scanRef = useRef(null)
+  const [scanToast, setScanToast] = useState(null) // { type: 'success'|'error', text }
+  const scanBuffer = useRef('')
+  const scanLastTime = useRef(0)
 
   const setting = loyaltySetting || { pointsPerDh: 1, pointsForDh: 25 }
   const discountDh = selectedCard ? Math.floor(ptsToRedeem / setting.pointsForDh) : 0
@@ -31,23 +31,38 @@ export default function POS(props) {
   const cancelSale = () => {
     setActive(false); setCart([]); setClientName(''); setClientNameError(false)
     setSelectedCard(null); setPtsToRedeem(0); setShowLoyalty(false)
-    setScanValue(''); setScanError(null)
+    setScanToast(null); scanBuffer.current = ''
   }
 
-  const handleScan = (e) => {
-    if (e.key !== 'Enter') return
-    const code = scanValue.trim()
-    if (!code) return
-    const found = products.find(p => p.barcode && p.barcode === code)
-    if (found) {
-      addToCart(found)
-      setScanError(null)
-    } else {
-      setScanError(code)
-      setTimeout(() => setScanError(null), 2000)
-    }
-    setScanValue('')
+  const showToast = (type, text) => {
+    setScanToast({ type, text })
+    setTimeout(() => setScanToast(null), 2000)
   }
+
+  useEffect(() => {
+    if (!active) return
+    const handleKey = (e) => {
+      const now = Date.now()
+      if (now - scanLastTime.current > 50) scanBuffer.current = ''
+      scanLastTime.current = now
+      if (e.key === 'Enter') {
+        const code = scanBuffer.current
+        scanBuffer.current = ''
+        if (code.length < 4) return
+        const found = products.find(p => p.barcode && p.barcode === code)
+        if (found) {
+          addToCart(found)
+          showToast('success', found.name)
+        } else {
+          showToast('error', code)
+        }
+        return
+      }
+      if (e.key.length === 1) scanBuffer.current += e.key
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [active, products])
 
   const addToCart = (product) => {
     setCart(prev => {
@@ -150,36 +165,21 @@ export default function POS(props) {
   }
 
   return (
-    <div style={{ height: 'calc(100vh - 60px)', display: 'flex', overflow: 'hidden' }}>
+    <div style={{ height: 'calc(100vh - 60px)', display: 'flex', overflow: 'hidden', position: 'relative' }}>
+      {scanToast && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 999, padding: '12px 24px', borderRadius: 12,
+          background: scanToast.type === 'success' ? '#065F46' : '#991B1B',
+          color: '#fff', fontSize: 14, fontWeight: 700,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+          display: 'flex', alignItems: 'center', gap: 10, whiteSpace: 'nowrap',
+        }}>
+          {scanToast.type === 'success' ? '✓' : '⚠'} {scanToast.type === 'success' ? `Ajouté : ${scanToast.text}` : `Code introuvable : ${scanToast.text}`}
+        </div>
+      )}
       {/* Products panel */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px 16px 16px 20px' }}>
-        {/* Barcode scanner input */}
-        <div style={{ marginBottom: 8, position: 'relative' }}>
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' }}>
-              🔫
-            </span>
-            <input
-              ref={scanRef}
-              value={scanValue}
-              onChange={e => setScanValue(e.target.value)}
-              onKeyDown={handleScan}
-              placeholder="Scanner un code-barres..."
-              style={{
-                width: '100%', padding: '8px 36px 8px 12px', borderRadius: 8,
-                border: `1.5px solid ${scanError ? '#E24B4A' : '#D1FAE5'}`,
-                background: scanError ? '#FFF5F5' : '#F0FDF9',
-                fontSize: 13, outline: 'none', color: '#065F46',
-              }}
-            />
-          </div>
-          {scanError && (
-            <div style={{ color: '#E24B4A', fontSize: 11, fontWeight: 600, marginTop: 3, paddingLeft: 4 }}>
-              ⚠ Code-barres introuvable : {scanError}
-            </div>
-          )}
-        </div>
-
         {/* Top bar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: clientNameError ? 4 : 8, alignItems: 'center' }}>
           <input
