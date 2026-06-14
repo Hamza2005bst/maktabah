@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { COLORS, formatMoney, uid } from '../constants.js'
 
 export default function POS(props) {
@@ -14,8 +14,11 @@ export default function POS(props) {
   // Loyalty state
   const [showLoyalty, setShowLoyalty] = useState(false)
   const [loyaltySearch, setLoyaltySearch] = useState('')
-  const [selectedCard, setSelectedCard] = useState(null) // loyalty card object
+  const [selectedCard, setSelectedCard] = useState(null)
   const [ptsToRedeem, setPtsToRedeem] = useState(0)
+  const [scanValue, setScanValue] = useState('')
+  const [scanError, setScanError] = useState(null)
+  const scanRef = useRef(null)
 
   const setting = loyaltySetting || { pointsPerDh: 1, pointsForDh: 25 }
   const discountDh = selectedCard ? Math.floor(ptsToRedeem / setting.pointsForDh) : 0
@@ -28,6 +31,22 @@ export default function POS(props) {
   const cancelSale = () => {
     setActive(false); setCart([]); setClientName(''); setClientNameError(false)
     setSelectedCard(null); setPtsToRedeem(0); setShowLoyalty(false)
+    setScanValue(''); setScanError(null)
+  }
+
+  const handleScan = (e) => {
+    if (e.key !== 'Enter') return
+    const code = scanValue.trim()
+    if (!code) return
+    const found = products.find(p => p.barcode && p.barcode === code)
+    if (found) {
+      addToCart(found)
+      setScanError(null)
+    } else {
+      setScanError(code)
+      setTimeout(() => setScanError(null), 2000)
+    }
+    setScanValue('')
   }
 
   const addToCart = (product) => {
@@ -134,6 +153,33 @@ export default function POS(props) {
     <div style={{ height: 'calc(100vh - 60px)', display: 'flex', overflow: 'hidden' }}>
       {/* Products panel */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px 16px 16px 20px' }}>
+        {/* Barcode scanner input */}
+        <div style={{ marginBottom: 8, position: 'relative' }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' }}>
+              🔫
+            </span>
+            <input
+              ref={scanRef}
+              value={scanValue}
+              onChange={e => setScanValue(e.target.value)}
+              onKeyDown={handleScan}
+              placeholder="Scanner un code-barres..."
+              style={{
+                width: '100%', padding: '8px 36px 8px 12px', borderRadius: 8,
+                border: `1.5px solid ${scanError ? '#E24B4A' : '#D1FAE5'}`,
+                background: scanError ? '#FFF5F5' : '#F0FDF9',
+                fontSize: 13, outline: 'none', color: '#065F46',
+              }}
+            />
+          </div>
+          {scanError && (
+            <div style={{ color: '#E24B4A', fontSize: 11, fontWeight: 600, marginTop: 3, paddingLeft: 4 }}>
+              ⚠ Code-barres introuvable : {scanError}
+            </div>
+          )}
+        </div>
+
         {/* Top bar */}
         <div style={{ display: 'flex', gap: 10, marginBottom: clientNameError ? 4 : 8, alignItems: 'center' }}>
           <input

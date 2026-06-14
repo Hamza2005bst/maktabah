@@ -8,7 +8,7 @@ export default function Products({ t, categories, products, addCategory, updateC
   const [selectedCat, setSelectedCat] = useState(null)
   const [showProductForm, setShowProductForm] = useState(false)
   const [editingProduct, setEditingProduct] = useState(null)
-  const [productForm, setProductForm] = useState({ name: '', price: '', costPrice: '', categoryId: '' })
+  const [productForm, setProductForm] = useState({ name: '', price: '', costPrice: '', categoryId: '', barcode: '' })
   const [formErrors, setFormErrors] = useState({})
   const [search, setSearch] = useState('')
 
@@ -29,10 +29,10 @@ export default function Products({ t, categories, products, addCategory, updateC
   const openProductForm = (product = null) => {
     if (product) {
       setEditingProduct(product)
-      setProductForm({ name: product.name, price: product.price, costPrice: product.costPrice || '', categoryId: product.categoryId })
+      setProductForm({ name: product.name, price: product.price, costPrice: product.costPrice || '', categoryId: product.categoryId, barcode: product.barcode || '' })
     } else {
       setEditingProduct(null)
-      setProductForm({ name: '', price: '', costPrice: '', categoryId: selectedCat || '' })
+      setProductForm({ name: '', price: '', costPrice: '', categoryId: selectedCat || '', barcode: '' })
     }
     setFormErrors({})
     setShowProductForm(true)
@@ -54,6 +54,7 @@ export default function Products({ t, categories, products, addCategory, updateC
       price: Number(productForm.price),
       costPrice: Number(productForm.costPrice) || 0,
       categoryId: productForm.categoryId,
+      barcode: productForm.barcode.trim() || null,
     }
     if (editingProduct) {
       updateProduct(editingProduct.id, data)
@@ -215,6 +216,11 @@ export default function Products({ t, categories, products, addCategory, updateC
                 <label style={lbl}>{t('costPrice')}</label>
                 <input style={inp} type="number" min="0" step="0.01"
                   value={productForm.costPrice} onChange={e => setProductForm(f => ({ ...f, costPrice: e.target.value }))} />
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={lbl}>Code-barres <span style={{ color: '#9CA3AF', fontWeight: 400 }}>(optionnel — pour pistolet scanner)</span></label>
+                <input style={inp} placeholder="Ex: 6111234567890"
+                  value={productForm.barcode} onChange={e => setProductForm(f => ({ ...f, barcode: e.target.value }))} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
