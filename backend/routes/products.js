@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, price, costPrice, categoryId } = req.body
+    const { name, price, costPrice, categoryId, barcode } = req.body
     if (!name || !categoryId) return res.status(400).json({ error: 'Champs manquants' })
     const limit = LIMITS[req.user.plan] ?? Infinity
     const countResult = await query(
@@ -29,10 +29,10 @@ router.post('/', async (req, res) => {
     if (parseInt(countResult.rows[0].n) >= limit) return res.status(403).json({ error: 'planLimit' })
     const id = uid()
     await query(
-      'INSERT INTO products (id, name, price, "costPrice", "categoryId", "storeId") VALUES ($1, $2, $3, $4, $5, $6)',
-      [id, name, price ?? 0, costPrice ?? 0, categoryId, req.user.id]
+      'INSERT INTO products (id, name, price, "costPrice", "categoryId", "storeId", barcode) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [id, name, price ?? 0, costPrice ?? 0, categoryId, req.user.id, barcode ?? null]
     )
-    res.status(201).json({ id, name, price: price ?? 0, costPrice: costPrice ?? 0, categoryId, storeId: req.user.id })
+    res.status(201).json({ id, name, price: price ?? 0, costPrice: costPrice ?? 0, categoryId, storeId: req.user.id, barcode: barcode ?? null })
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' })
   }
@@ -43,10 +43,10 @@ router.put('/:id', async (req, res) => {
     const productResult = await query('SELECT * FROM products WHERE id = $1 AND "storeId" = $2', [req.params.id, req.user.id])
     const product = productResult.rows[0]
     if (!product) return res.status(404).json({ error: 'Produit introuvable' })
-    const { name, price, costPrice, categoryId } = req.body
+    const { name, price, costPrice, categoryId, barcode } = req.body
     await query(
-      'UPDATE products SET name=$1, price=$2, "costPrice"=$3, "categoryId"=$4 WHERE id=$5',
-      [name ?? product.name, price ?? product.price, costPrice ?? product.costPrice, categoryId ?? product.categoryId, req.params.id]
+      'UPDATE products SET name=$1, price=$2, "costPrice"=$3, "categoryId"=$4, barcode=$5 WHERE id=$6',
+      [name ?? product.name, price ?? product.price, costPrice ?? product.costPrice, categoryId ?? product.categoryId, barcode !== undefined ? barcode : product.barcode, req.params.id]
     )
     res.json({
       ...product,
@@ -54,6 +54,7 @@ router.put('/:id', async (req, res) => {
       price: price ?? product.price,
       costPrice: costPrice ?? product.costPrice,
       categoryId: categoryId ?? product.categoryId,
+      barcode: barcode !== undefined ? barcode : product.barcode,
     })
   } catch (err) {
     res.status(500).json({ error: 'Erreur serveur' })

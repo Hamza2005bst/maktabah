@@ -37,7 +37,8 @@ async function initSchema() {
       price REAL NOT NULL DEFAULT 0,
       "costPrice" REAL NOT NULL DEFAULT 0,
       "categoryId" TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
-      "storeId" TEXT NOT NULL REFERENCES stores(id) ON DELETE CASCADE
+      "storeId" TEXT NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+      barcode TEXT
     )`,
     `CREATE TABLE IF NOT EXISTS cities (
       id TEXT PRIMARY KEY,
@@ -122,6 +123,7 @@ async function initSchema() {
   for (const sql of tables) {
     await query(sql)
   }
+  await query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode TEXT`)
 }
 
 module.exports = { query, initSchema }
