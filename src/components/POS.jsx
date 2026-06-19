@@ -42,14 +42,12 @@ export default function POS(props) {
   useEffect(() => {
     if (!active) return
     const handleKey = (e) => {
-      const now = Date.now()
-      if (now - scanLastTime.current > 50) scanBuffer.current = ''
-      scanLastTime.current = now
       if (e.key === 'Enter') {
-        const code = scanBuffer.current
+        const code = scanBuffer.current.trim()
         scanBuffer.current = ''
+        scanLastTime.current = 0
         if (code.length < 4) return
-        const found = products.find(p => p.barcode && p.barcode === code)
+        const found = products.find(p => p.barcode && p.barcode.trim() === code)
         if (found) {
           addToCart(found)
           showToast('success', found.name)
@@ -58,6 +56,9 @@ export default function POS(props) {
         }
         return
       }
+      const now = Date.now()
+      if (now - scanLastTime.current > 100) scanBuffer.current = ''
+      scanLastTime.current = now
       if (e.key.length === 1) scanBuffer.current += e.key
     }
     document.addEventListener('keydown', handleKey)
