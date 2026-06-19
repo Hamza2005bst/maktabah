@@ -19,6 +19,8 @@ export default function POS(props) {
   const [scanToast, setScanToast] = useState(null) // { type: 'success'|'error', text }
   const scanBuffer = useRef('')
   const scanLastTime = useRef(0)
+  const productsRef = useRef(products)
+  useEffect(() => { productsRef.current = products }, [products])
 
   const setting = loyaltySetting || { pointsPerDh: 1, pointsForDh: 25 }
   const discountDh = selectedCard ? Math.floor(ptsToRedeem / setting.pointsForDh) : 0
@@ -41,18 +43,35 @@ export default function POS(props) {
 
   useEffect(() => {
     if (!active) return
+    const decodeAscii = (raw) => {
+      if (raw.length % 3 !== 0 || raw.length < 9) return null
+      let decoded = ''
+      for (let i = 0; i < raw.length; i += 3) {
+        const n = parseInt(raw.substring(i, i + 3), 10)
+        if (n < 32 || n > 126) return null
+        decoded += String.fromCharCode(n)
+      }
+      return decoded
+    }
+    const findProduct = (code) => {
+      return productsRef.current.find(p => p.barcode && p.barcode.trim() === code)
+    }
     const handleKey = (e) => {
       if (e.key === 'Enter') {
-        const code = scanBuffer.current.trim()
+        const raw = scanBuffer.current.trim()
         scanBuffer.current = ''
         scanLastTime.current = 0
-        if (code.length < 4) return
-        const found = products.find(p => p.barcode && p.barcode.trim() === code)
+        if (raw.length < 4) return
+        let found = findProduct(raw)
+        if (!found) {
+          const decoded = decodeAscii(raw)
+          if (decoded) found = findProduct(decoded)
+        }
         if (found) {
           addToCart(found)
           showToast('success', found.name)
         } else {
-          showToast('error', code)
+          showToast('error', raw)
         }
         return
       }
@@ -63,7 +82,7 @@ export default function POS(props) {
     }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [active, products])
+  }, [active])
 
   const addToCart = (product) => {
     setCart(prev => {
