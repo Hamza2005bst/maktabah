@@ -75,7 +75,7 @@ export default function Products({ t, categories, products, addCategory, updateC
     products: products.filter(p =>
       p.categoryId === cat.id &&
       (!selectedCat || selectedCat === cat.id) &&
-      (!q || p.name.toLowerCase().includes(q))
+      (!q || p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.toLowerCase().includes(q)))
     ),
   })).filter(g => g.products.length > 0)
 
