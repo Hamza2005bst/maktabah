@@ -660,13 +660,13 @@ function PrintTicketModal({ data, onClose }) {
     const w = window.open('', '_blank', 'width=420,height=700,scrollbars=yes')
     const lines = cart.map(item => {
       const lineTotal = formatMoney(item.price * item.quantity)
-      const name = item.name.length > 22 ? item.name.slice(0, 21) + '…' : item.name
+      const name = item.name.length > 16 ? item.name.slice(0, 15) + '…' : item.name
       const qtyPrice = `${item.quantity} x ${formatMoney(item.price)} DH`
       return `
         <tr>
-          <td style="padding:3px 0; font-size:13px; font-weight:900;">${name}</td>
-          <td style="padding:3px 0; font-size:12px; font-weight:900; text-align:center;">${qtyPrice}</td>
-          <td style="padding:3px 0; font-size:13px; font-weight:900; text-align:right;">${lineTotal} DH</td>
+          <td style="padding:3px 0; font-size:12px; font-weight:900; word-break:break-all; overflow:hidden;">${name}</td>
+          <td style="padding:3px 0; font-size:11px; font-weight:900; text-align:center; white-space:nowrap;">${qtyPrice}</td>
+          <td style="padding:3px 0; font-size:12px; font-weight:900; text-align:right; white-space:nowrap;">${lineTotal} DH</td>
         </tr>`
     }).join('')
 
@@ -683,25 +683,27 @@ function PrintTicketModal({ data, onClose }) {
 
     w.document.write(`<!DOCTYPE html><html><head><title>Ticket</title>
       <style>
-        @page { size: 80mm auto; margin: 2mm; }
-        * { color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 900 !important; -webkit-text-stroke: 0.3px #000; }
-        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 10px; width: 72mm; font-size: 13px; font-weight: 900; line-height: 1.5; }
-        @media print { body { padding: 0; width: 72mm; } }
-        table { width: 100%; border-collapse: collapse; }
-        .header { text-align: center; margin-bottom: 10px; }
-        .sep { border: none; border-top: 2px dashed #000; margin: 8px 0; }
-        .sep-thin { border: none; border-top: 1px dashed #000; margin: 6px 0; }
-        .total-row td { font-size: 16px; font-weight: 900; padding-top: 6px; }
-        .thanks { text-align: center; font-size: 12px; margin-top: 12px; font-weight: 900; }
+        @page { size: 72mm auto; margin: 0; }
+        * { color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 900 !important; box-sizing: border-box; }
+        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 2mm 3mm; width: 72mm; font-size: 12px; font-weight: 900; line-height: 1.4; box-sizing: border-box; }
+        @media print { body { padding: 2mm 3mm; width: 72mm; } }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .header { text-align: center; margin-bottom: 8px; }
+        .sep { border: none; border-top: 2px dashed #000; margin: 6px 0; }
+        .sep-thin { border: none; border-top: 1px dashed #000; margin: 4px 0; }
+        .total-row td { font-size: 15px; font-weight: 900; padding-top: 6px; }
+        .thanks { text-align: center; font-size: 12px; margin-top: 10px; font-weight: 900; }
+        td, th { overflow: hidden; }
       </style>
     </head><body>
       <div class="header">
-        <div style="font-size:16px;font-weight:900;letter-spacing:1px;">${storeName}</div>
-        <div style="font-size:12px;margin-top:4px;font-weight:900;">${date} &nbsp;|&nbsp; ${time}</div>
+        <div style="font-size:15px;font-weight:900;letter-spacing:1px;">${storeName}</div>
+        <div style="font-size:11px;margin-top:4px;font-weight:900;">${date} | ${time}</div>
         ${clientName ? `<div style="font-size:12px;margin-top:4px;"><strong>Client :</strong> ${clientName}</div>` : ''}
       </div>
       <hr class="sep"/>
       <table>
+        <colgroup><col style="width:38%"/><col style="width:34%"/><col style="width:28%"/></colgroup>
         <thead>
           <tr style="font-size:11px;font-weight:700;">
             <th style="text-align:left;padding-bottom:4px;">Produit</th>
@@ -717,7 +719,7 @@ function PrintTicketModal({ data, onClose }) {
       <hr class="sep"/>
       <table>
         <tr class="total-row">
-          <td colspan="2">TOTAL</td>
+          <td>TOTAL</td>
           <td style="text-align:right;">${formatMoney(total)} DH</td>
         </tr>
       </table>
