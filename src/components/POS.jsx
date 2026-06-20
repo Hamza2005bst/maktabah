@@ -661,10 +661,10 @@ function PrintTicketModal({ data, onClose }) {
     const lines = cart.map(item => {
       const lineTotal = formatMoney(item.price * item.quantity)
       const name = item.name.length > 16 ? item.name.slice(0, 15) + '…' : item.name
-      const qtyPrice = `${item.quantity} x ${formatMoney(item.price)} DH`
+      const qtyPrice = `${item.quantity} x ${formatMoney(item.price)}`
       return `
         <tr>
-          <td style="padding:3px 0; font-size:12px; font-weight:700; word-break:break-all; overflow:hidden;">${name}</td>
+          <td style="padding:3px 0; font-size:12px; font-weight:700; word-break:break-all;">${name}</td>
           <td style="padding:3px 0; font-size:11px; font-weight:700; text-align:center; white-space:nowrap;">${qtyPrice}</td>
           <td style="padding:3px 0; font-size:12px; font-weight:700; text-align:right; white-space:nowrap;">${lineTotal} DH</td>
         </tr>`
@@ -685,15 +685,15 @@ function PrintTicketModal({ data, onClose }) {
       <style>
         @page { size: 72mm auto; margin: 0; }
         * { color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-weight: 700 !important; box-sizing: border-box; }
-        body { font-family: 'Courier New', Courier, monospace; margin: 0; padding: 2mm 2mm; width: 72mm; font-size: 12px; font-weight: 700; line-height: 1.4; box-sizing: border-box; }
-        @media print { body { padding: 2mm 2mm; width: 72mm; } }
+        body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 2mm 3mm 2mm 2mm; width: 72mm; font-size: 12px; font-weight: 700; line-height: 1.4; box-sizing: border-box; }
+        @media print { body { padding: 2mm 3mm 2mm 2mm; width: 72mm; } }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         .header { text-align: center; margin-bottom: 8px; }
         .sep { border: none; border-top: 2px dashed #000; margin: 6px 0; }
         .sep-thin { border: none; border-top: 1px dashed #000; margin: 4px 0; }
         .total-row td { font-size: 15px; font-weight: 700; padding-top: 6px; }
         .thanks { text-align: center; font-size: 12px; margin-top: 10px; font-weight: 700; }
-        td, th { overflow: hidden; }
+        td, th { overflow: visible; }
       </style>
     </head><body>
       <div class="header">
@@ -703,7 +703,7 @@ function PrintTicketModal({ data, onClose }) {
       </div>
       <hr class="sep"/>
       <table>
-        <colgroup><col style="width:34%"/><col style="width:34%"/><col style="width:32%"/></colgroup>
+        <colgroup><col style="width:38%"/><col style="width:28%"/><col style="width:34%"/></colgroup>
         <thead>
           <tr style="font-size:11px;font-weight:700;">
             <th style="text-align:left;padding-bottom:4px;">Produit</th>
