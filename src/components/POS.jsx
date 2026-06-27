@@ -660,7 +660,7 @@ function PrintTicketModal({ data, onClose }) {
     const w = window.open('', '_blank', 'width=420,height=700,scrollbars=yes')
     const lines = cart.map(item => {
       const lineTotal = formatMoney(item.price * item.quantity)
-      const name = item.name.length > 16 ? item.name.slice(0, 15) + '…' : item.name
+      const name = item.name
       const qtyPrice = `${item.quantity} x ${formatMoney(item.price)}`
       return `
         <tr>
@@ -703,7 +703,7 @@ function PrintTicketModal({ data, onClose }) {
       </div>
       <hr class="sep"/>
       <table>
-        <colgroup><col style="width:38%"/><col style="width:28%"/><col style="width:34%"/></colgroup>
+        <colgroup><col style="width:42%"/><col style="width:26%"/><col style="width:32%"/></colgroup>
         <thead>
           <tr style="font-size:11px;font-weight:700;">
             <th style="text-align:left;padding-bottom:4px;">Produit</th>
