@@ -1,7 +1,7 @@
 const { Pool } = require('pg')
 
 const dbUrl = process.env.DATABASE_URL || ''
-const needsSsl = process.env.NODE_ENV === 'production' || dbUrl.includes('supabase.com')
+const needsSsl = process.env.NODE_ENV === 'production' || dbUrl.includes('neon.tech') || dbUrl.includes('supabase.com')
 
 const pool = new Pool({
   connectionString: dbUrl,
