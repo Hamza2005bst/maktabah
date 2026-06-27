@@ -113,13 +113,13 @@ export default function POS(props) {
     setShowLists(false)
   }
 
-  const validateSale = () => {
+  const validateSale = async () => {
     if (cart.length === 0) return
     if (!clientName.trim() && !selectedCard) { setClientNameError(true); return }
     const rawTotal = cart.reduce((s, i) => s + i.price * i.quantity, 0)
     const finalTotal = Math.max(0, rawTotal - discountDh)
     const pointsEarned = Math.floor(finalTotal * setting.pointsPerDh)
-    addSale(clientName.trim() || (selectedCard?.name ?? ''), cart, {
+    const sale = await addSale(clientName.trim() || (selectedCard?.name ?? ''), cart, {
       cardId: selectedCard?.id || null,
       discountDh,
       pointsRedeemed: ptsToRedeem,
@@ -134,6 +134,7 @@ export default function POS(props) {
       discountDh,
       ptsToRedeem,
       total: finalTotal,
+      ticketNumber: sale?.ticketNumber || '',
       date: now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
       time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
     })
@@ -654,7 +655,7 @@ function ListsModal({ cities, schools, lists, listItems, products, onLoad, onClo
 }
 
 function PrintTicketModal({ data, onClose }) {
-  const { storeName, clientName, cart, rawTotal, discountDh, ptsToRedeem, total, date, time } = data
+  const { storeName, clientName, cart, rawTotal, discountDh, ptsToRedeem, total, ticketNumber, date, time } = data
 
   const handlePrint = () => {
     const w = window.open('', '_blank', 'width=420,height=700,scrollbars=yes')
@@ -699,6 +700,7 @@ function PrintTicketModal({ data, onClose }) {
       <div class="header">
         <div style="font-size:15px;font-weight:700;letter-spacing:1px;">${storeName}</div>
         <div style="font-size:11px;margin-top:4px;font-weight:700;">${date} | ${time}</div>
+        ${ticketNumber ? `<div style="font-size:12px;margin-top:4px;font-weight:700;">Ticket N° ${ticketNumber}</div>` : ''}
         ${clientName ? `<div style="font-size:12px;margin-top:4px;"><strong>Client :</strong> ${clientName}</div>` : ''}
       </div>
       <hr class="sep"/>
@@ -753,6 +755,7 @@ function PrintTicketModal({ data, onClose }) {
           <div style={{ textAlign: 'center', marginBottom: 12 }}>
             <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: 1 }}>{storeName}</div>
             <div style={{ fontSize: 11, color: '#888', marginTop: 4 }}>{date} &nbsp;|&nbsp; {time}</div>
+            {ticketNumber && <div style={{ fontSize: 12, marginTop: 4, fontWeight: 700 }}>Ticket N° {ticketNumber}</div>}
             {clientName && <div style={{ fontSize: 12, marginTop: 4 }}><strong>Client :</strong> {clientName}</div>}
           </div>
 

@@ -127,6 +127,7 @@ async function initSchema() {
     await query(sql)
   }
   await query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS barcode TEXT`)
+  await query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS "ticketNumber" INTEGER`)
 }
 
 module.exports = { query, initSchema }

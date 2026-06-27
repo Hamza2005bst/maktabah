@@ -392,7 +392,7 @@ export default function App() {
         }))
       }
       showToast(t('saleRegistered'))
-      return res.sale.id
+      return res.sale
     } catch (err) {
       handleApiError(err)
       return null

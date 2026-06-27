@@ -33,9 +33,11 @@ router.post('/', async (req, res) => {
     const total = Math.max(0, rawTotal - (opts.discountDh || 0))
     const saleId = uid()
     const now = new Date()
+    const lastNum = await query('SELECT COALESCE(MAX("ticketNumber"), 0) AS max FROM sales WHERE "storeId" = $1', [req.user.id])
+    const ticketNumber = lastNum.rows[0].max + 1
     await query(
-      `INSERT INTO sales (id, "storeId", "clientName", date, time, total, paid, "rawDate", "loyaltyCardId", "pointsEarned", "pointsRedeemed") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-      [saleId, req.user.id, clientName || '', fmtD(now), fmtT(now), total, false, now.toISOString(), opts.cardId || null, opts.pointsEarned || 0, opts.pointsRedeemed || 0]
+      `INSERT INTO sales (id, "storeId", "clientName", date, time, total, paid, "rawDate", "loyaltyCardId", "pointsEarned", "pointsRedeemed", "ticketNumber") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [saleId, req.user.id, clientName || '', fmtD(now), fmtT(now), total, false, now.toISOString(), opts.cardId || null, opts.pointsEarned || 0, opts.pointsRedeemed || 0, ticketNumber]
     )
     const createdItems = []
     for (const i of cartItems) {
@@ -58,6 +60,7 @@ router.post('/', async (req, res) => {
         date: fmtD(now), time: fmtT(now), total, paid: false,
         rawDate: now.toISOString(), loyaltyCardId: opts.cardId || null,
         pointsEarned: opts.pointsEarned || 0, pointsRedeemed: opts.pointsRedeemed || 0,
+        ticketNumber,
       },
       saleItems: createdItems,
     })
