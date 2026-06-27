@@ -1,8 +1,11 @@
 const { Pool } = require('pg')
 
+const dbUrl = process.env.DATABASE_URL || ''
+const needsSsl = process.env.NODE_ENV === 'production' || dbUrl.includes('supabase.com')
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionString: dbUrl,
+  ssl: needsSsl ? { rejectUnauthorized: false } : false,
 })
 
 const query = (sql, params) => pool.query(sql, params)

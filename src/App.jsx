@@ -235,7 +235,7 @@ export default function App() {
       await loadStoreData()
       return { ok: true }
     } catch (err) {
-      return { ok: false, error: err.error || 'Erreur inscription' }
+      return { ok: false, error: err.error || 'serverError' }
     }
   }, [loadStoreData, setStorePage])
 

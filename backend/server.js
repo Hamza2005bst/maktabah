@@ -35,6 +35,15 @@ app.use((err, req, res, next) => {
 })
 
 const PORT = process.env.PORT || 3001
-initSchema()
-  .then(() => app.listen(PORT, () => console.log(`Maktabah backend running on http://localhost:${PORT}`)))
-  .catch(err => { console.error('Échec initialisation schema:', err); process.exit(1) })
+
+async function startServer() {
+  try {
+    await initSchema()
+    console.log('Database schema initialized')
+  } catch (err) {
+    console.error('Database init failed (will retry on first request):', err.message)
+  }
+  app.listen(PORT, () => console.log(`Maktabah backend running on http://localhost:${PORT}`))
+}
+
+startServer()

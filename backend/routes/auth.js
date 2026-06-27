@@ -34,7 +34,8 @@ router.post('/login', async (req, res) => {
 
     res.json({ token: makeToken(store), user: sanitize(store) })
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('Login error:', err)
+    res.status(500).json({ error: 'serverError' })
   }
 })
 
@@ -64,7 +65,8 @@ router.post('/register', async (req, res) => {
     if (isGratuit) return res.status(201).json({ token: makeToken(store), user: sanitize(store) })
     res.status(201).json({ message: 'pending' })
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('Register error:', err)
+    res.status(500).json({ error: 'serverError' })
   }
 })
 
@@ -75,7 +77,8 @@ router.patch('/plan-request', auth, async (req, res) => {
     await query('UPDATE stores SET "pendingPlan" = $1 WHERE id = $2', [plan, req.user.id])
     res.json({ ok: true, pendingPlan: plan })
   } catch (err) {
-    res.status(500).json({ error: 'Erreur serveur' })
+    console.error('Plan request error:', err)
+    res.status(500).json({ error: 'serverError' })
   }
 })
 

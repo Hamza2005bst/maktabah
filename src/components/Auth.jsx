@@ -125,7 +125,7 @@ function RegisterForm({ register, setView, t }) {
     const result = await register({ storeName, phone, password, plan })
     setRegLoading(false)
     if (!result || !result.ok) {
-      setRegError(result?.error || 'Erreur lors de l\'inscription')
+      setRegError(t(result?.error || 'serverError'))
       return
     }
     if (plan !== 'gratuit') setSubmitted(true)

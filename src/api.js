@@ -9,12 +9,22 @@ async function call(method, path, body) {
   const headers = { 'Content-Type': 'application/json' }
   const token = getToken()
   if (token) headers['Authorization'] = `Bearer ${token}`
-  const res = await fetch(`${BASE}/api${path}`, {
-    method,
-    headers,
-    body: body != null ? JSON.stringify(body) : undefined,
-  })
-  const data = await res.json()
+  let res
+  try {
+    res = await fetch(`${BASE}/api${path}`, {
+      method,
+      headers,
+      body: body != null ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    throw { status: 0, error: 'networkError' }
+  }
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw { status: res.status, error: 'serverError' }
+  }
   if (!res.ok) throw { status: res.status, ...data }
   return data
 }
